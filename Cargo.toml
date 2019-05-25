@@ -18,3 +18,7 @@ bindgen = { version = "0.49", default_features = false }
 
 [lib]
 crate-type = ["cdylib", "lib"]
+
+[features]
+default = []
+serialize = ["hyperminhash/serialize"]

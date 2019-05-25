@@ -1,25 +1,7 @@
 use rand::Rng;
 
-static AUTOLOAD: std::sync::Once = std::sync::Once::new();
-
-fn init_db() -> rusqlite::Result<rusqlite::Connection> {
-    AUTOLOAD.call_once(|| {
-        // https://sqlite.org/c3ref/auto_extension.html
-        let ptr = sqlite3_hyperminhash::sqlite3_sqlitehyperminhash_init
-            as unsafe extern "C" fn(
-                *mut std::ffi::c_void,
-                *const std::ffi::c_void,
-                *const std::ffi::c_void,
-            ) -> i32;
-        let rc = unsafe {
-            sqlite3_hyperminhash::testutil::sqlite3_auto_extension(Some(std::mem::transmute(ptr)))
-        };
-        if rc as u32 != sqlite3_hyperminhash::testutil::SQLITE_OK {
-            panic!("sqlite3_auto_extension failed");
-        }
-    });
-    rusqlite::Connection::open_in_memory()
-}
+mod util;
+use util::init_db;
 
 fn hmh_id(con: &rusqlite::Connection) -> rusqlite::Result<f64> {
     con.query_row(
@@ -60,8 +42,14 @@ fn simple_count_error() -> rusqlite::Result<()> {
 #[test]
 fn data_types() -> rusqlite::Result<()> {
     let con = init_db()?;
-    con.execute("CREATE TABLE bar (i INT, f FLOAT, s TEXT, b BLOB)", rusqlite::params![])?;
-    con.execute("INSERT INTO bar (i, f, s, b) VALUES (?1, ?2, ?3, ?4)", rusqlite::params![1, 2.0, "3.0", &b"4.0"[..]])?;
+    con.execute(
+        "CREATE TABLE bar (i INT, f FLOAT, s TEXT, b BLOB)",
+        rusqlite::params![],
+    )?;
+    con.execute(
+        "INSERT INTO bar (i, f, s, b) VALUES (?1, ?2, ?3, ?4)",
+        rusqlite::params![1, 2.0, "3.0", &b"4.0"[..]],
+    )?;
     // All primitive data types are counted
     let r: f64 = con.query_row(
         "SELECT hyperminhash(i, f, s, b) FROM bar",
@@ -77,21 +65,25 @@ fn data_types() -> rusqlite::Result<()> {
 fn random_data() -> rusqlite::Result<()> {
     let mut rnd = rand::thread_rng();
     let con = init_db()?;
-    con.execute("CREATE TABLE bar (i INT, f FLOAT, s TEXT, b BLOB)", rusqlite::params![])?;
+    con.execute(
+        "CREATE TABLE bar (i INT, f FLOAT, s TEXT, b BLOB)",
+        rusqlite::params![],
+    )?;
     let mut stmt = con.prepare("INSERT INTO bar (i, f, s, b) VALUES (?1, ?2, ?3, ?4)")?;
     for _ in 0..10_000 {
         let row: (i64, f64, [u8; 10]) = rnd.gen();
         let s: String = (0..10).map(|_| rnd.gen::<char>()).collect();
         stmt.execute(rusqlite::params![row.0, row.1, s, &row.2[..]])?;
     }
-    con.execute("INSERT INTO bar (i, f, s, b) SELECT * FROM bar", rusqlite::params![])?;
+    con.execute(
+        "INSERT INTO bar (i, f, s, b) SELECT * FROM bar",
+        rusqlite::params![],
+    )?;
 
     // Real count is 20000
-    let r: i64 = con.query_row(
-        "SELECT COUNT(*) FROM bar",
-        rusqlite::params![],
-        |row| row.get(0),
-    )?;
+    let r: i64 = con.query_row("SELECT COUNT(*) FROM bar", rusqlite::params![], |row| {
+        row.get(0)
+    })?;
     assert_eq!(r, 20_000);
 
     // Real distinct count is 10000
@@ -115,7 +107,10 @@ fn random_data() -> rusqlite::Result<()> {
 #[test]
 fn null_rows() -> rusqlite::Result<()> {
     let con = init_db()?;
-    con.execute("CREATE TABLE foobar (foo INT, bar INT)", rusqlite::params![])?;
+    con.execute(
+        "CREATE TABLE foobar (foo INT, bar INT)",
+        rusqlite::params![],
+    )?;
     let mut stmt = con.prepare("INSERT INTO foobar (foo, bar) VALUES (?1, ?2)")?;
     stmt.execute(rusqlite::params![Option::<i64>::None, Option::<i64>::None])?;
     stmt.execute(rusqlite::params![Option::<i64>::None, Option::<i64>::None])?;
@@ -143,7 +138,10 @@ fn null_rows() -> rusqlite::Result<()> {
 fn null_data() -> rusqlite::Result<()> {
     let mut rnd = rand::thread_rng();
     let con = init_db()?;
-    con.execute("CREATE TABLE foobar (foo INT, bar INT)", rusqlite::params![])?;
+    con.execute(
+        "CREATE TABLE foobar (foo INT, bar INT)",
+        rusqlite::params![],
+    )?;
     let mut stmt = con.prepare("INSERT INTO foobar (foo, bar) VALUES (?1, ?2)")?;
     for _ in 0..10_000 {
         let row: (Option<u8>, Option<bool>) = rnd.gen();
@@ -155,6 +153,7 @@ fn null_data() -> rusqlite::Result<()> {
         rusqlite::params![],
         |row| row.get(0),
     )?;
+    // NULL-Values and rows are counted as DISTINCT does
     let r: f64 = con.query_row(
         "SELECT hyperminhash(foo, bar) FROM foobar",
         rusqlite::params![],
