@@ -99,7 +99,7 @@ impl<'a> RawValue<'a> {
     }
 
     #[cfg(feature = "serialize")]
-    fn as_blob(&self) -> Result<&[u8], HMHError> {
+    fn as_blob(self) -> Result<&'a [u8], HMHError> {
         match self {
             RawValue::Blob(b) => Ok(b),
             _ => Err(HMHError::ValueIsNotBlob),
@@ -199,6 +199,7 @@ pub mod serialize_stub {
 
     no_such_func!(hyperminhash_zero);
     no_such_func!(hyperminhash_deserialize);
-    no_such_func!(hyperminhash_union);
+    no_such_func!(hyperminhash_add);
+    no_such_func!(hyperminhash_union_step);
     no_such_func!(hyperminhash_intersection);
 }

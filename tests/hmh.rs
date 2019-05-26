@@ -72,7 +72,10 @@ fn random_data() -> rusqlite::Result<()> {
     let mut stmt = con.prepare("INSERT INTO bar (i, f, s, b) VALUES (?1, ?2, ?3, ?4)")?;
     for _ in 0..10_000 {
         let row: (i64, f64, [u8; 10]) = rnd.gen();
-        let s: String = (0..10).map(|_| rnd.gen::<char>()).collect();
+        let s: String = (0..10)
+            .map(|_| rnd.gen::<char>())
+            .filter(|c| *c != '\x00')
+            .collect();
         stmt.execute(rusqlite::params![row.0, row.1, s, &row.2[..]])?;
     }
     con.execute(
