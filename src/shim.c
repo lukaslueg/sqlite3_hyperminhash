@@ -3,6 +3,12 @@ SQLITE_EXTENSION_INIT1
 
 #include <stddef.h>
 
+#ifdef SQLITE_DETERMINISTIC
+#define WEAK_DETERMINISTIC SQLITE_DETERMINISTIC
+#else
+#define WEAK_DETERMINISTIC 0
+#endif
+
 void hyperminhash_step(sqlite3_context*, int, sqlite3_value**);
 void hyperminhash_final(sqlite3_context*);
 
@@ -27,7 +33,7 @@ int init_shim(
           db, // db
           "hyperminhash", // zFunctionName
           -1, // nArg
-          SQLITE_UTF8 | SQLITE_DETERMINISTIC, // eTextRep
+          SQLITE_UTF8 | WEAK_DETERMINISTIC, // eTextRep
           NULL, // pApp
           NULL, // xFunc
           hyperminhash_step, // xStep
@@ -41,7 +47,7 @@ int init_shim(
           db, // db
           "hyperminhash_zero", // zFunctionName
           0, // nArg
-          SQLITE_UTF8 | SQLITE_DETERMINISTIC, // eTextRep
+          SQLITE_UTF8 | WEAK_DETERMINISTIC, // eTextRep
           NULL, // pApp
           hyperminhash_zero, // xFunc
           NULL, // xStep
@@ -55,7 +61,7 @@ int init_shim(
           db, // db
           "hyperminhash_add", // zFunctionName
           -1, // nArg
-          SQLITE_UTF8 | SQLITE_DETERMINISTIC, // eTextRep
+          SQLITE_UTF8 | WEAK_DETERMINISTIC, // eTextRep
           NULL, // pApp
           hyperminhash_add, // xFunc
           NULL, // xStep
@@ -69,7 +75,7 @@ int init_shim(
           db, // db
           "hyperminhash_serialize", // zFunctionName
           -1, // nArg
-          SQLITE_UTF8 | SQLITE_DETERMINISTIC, // eTextRep
+          SQLITE_UTF8 | WEAK_DETERMINISTIC, // eTextRep
           NULL, // pApp
           NULL, // xFunc
           hyperminhash_step, // xStep
@@ -83,7 +89,7 @@ int init_shim(
           db, // db
           "hyperminhash_deserialize", // zFunctionName
           1, // nArg
-          SQLITE_UTF8 | SQLITE_DETERMINISTIC, // eTextRep
+          SQLITE_UTF8 | WEAK_DETERMINISTIC, // eTextRep
           NULL, // pApp
           hyperminhash_deserialize, // xFunc
           NULL, // xStep
@@ -97,7 +103,7 @@ int init_shim(
           db, // db
           "hyperminhash_union", // zFunctionName
           1, // nArg
-          SQLITE_UTF8 | SQLITE_DETERMINISTIC, // eTextRep
+          SQLITE_UTF8 | WEAK_DETERMINISTIC, // eTextRep
           NULL, // pApp
           NULL, // xFunc
           hyperminhash_union_step, // xStep
@@ -111,7 +117,7 @@ int init_shim(
           db, // db
           "hyperminhash_intersection", // zFunctionName
           2, // nArg
-          SQLITE_UTF8 | SQLITE_DETERMINISTIC, // eTextRep
+          SQLITE_UTF8 | WEAK_DETERMINISTIC, // eTextRep
           NULL, // pApp
           hyperminhash_intersection, // xFunc
           NULL, // xStep
