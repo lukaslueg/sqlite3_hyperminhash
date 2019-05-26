@@ -3,16 +3,23 @@ use std::{ffi, mem, os::raw, slice};
 use super::bindings::*;
 use super::{HMHError, RawValue, Sketch};
 
-unsafe extern "C" fn drop_blob_buffer(buf: *mut ffi::c_void) {
-    drop(Box::from_raw(buf))
+unsafe extern "C" fn drop_blob_buffer<T>(buf: *mut ffi::c_void) {
+    drop(Box::<T>::from_raw(buf as *mut _))
 }
 
-unsafe fn sketch_to_result(sk: &Sketch, ctx: *mut sqlite3_context) -> Result<(), HMHError> {
-    let mut buf = Vec::with_capacity(32768);
-    sk.save(&mut buf)?;
-    let buf_len = buf.len();
-    let buf = Box::into_raw(buf.into_boxed_slice()) as *const ffi::c_void;
-    sqlite3_result_blob(ctx, buf, buf_len as i32, Some(drop_blob_buffer));
+unsafe fn set_blob_result<T>(ctx: *mut sqlite3_context, value: Box<T>) {
+    let buf_len = std::mem::size_of_val(&*value);
+    let p = Box::into_raw(value) as *const ffi::c_void;
+    sqlite3_result_blob(ctx, p, buf_len as i32, Some(drop_blob_buffer::<T>));
+}
+
+unsafe fn sketch_to_result<'a>(
+    sk: &Sketch,
+    ctx: &'a *mut sqlite3_context,
+) -> Result<(), HMHError<'a>> {
+    let mut buf = Box::new([0; 32768]);
+    sk.save(&mut buf[..])?;
+    set_blob_result(*ctx, buf);
     Ok(())
 }
 
@@ -22,7 +29,7 @@ pub unsafe extern "C" fn hyperminhash_zero(
     _num_values: raw::c_int,
     _values: *mut *mut sqlite3_value,
 ) {
-    HMHError::set_ctx(ctx, || sketch_to_result(&Sketch::default(), ctx));
+    HMHError::set_ctx(ctx, || sketch_to_result(&Sketch::default(), &ctx));
 }
 
 #[no_mangle]
@@ -34,7 +41,7 @@ pub unsafe extern "C" fn hyperminhash_serialize_final(ctx: *mut sqlite3_context)
         } else {
             Box::from_raw(*p)
         };
-        sketch_to_result(&sketch, ctx)
+        sketch_to_result(&sketch, &ctx)
     })
 }
 
@@ -79,7 +86,7 @@ pub unsafe extern "C" fn hyperminhash_add(
             })
             .transpose()?
             .unwrap_or_default();
-        sketch_to_result(&sum_sketch, ctx)?;
+        sketch_to_result(&sum_sketch, &ctx)?;
         Ok(())
     });
 }

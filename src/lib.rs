@@ -6,7 +6,7 @@ mod bindings {
     include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
 }
 use bindings::*;
-use std::{error, ffi, fmt, io, mem, os::raw, slice};
+use std::{ffi, fmt, io, mem, os::raw, slice};
 
 use hyperminhash::Sketch;
 
@@ -14,15 +14,15 @@ use hyperminhash::Sketch;
 pub mod serialize;
 
 #[derive(Debug)]
-enum HMHError {
+enum HMHError<'a> {
     #[cfg(not(feature = "serialize"))]
     FeatureMissing,
-    #[cfg(feature = "serialize")]
-    ValueIsNotBlob,
+    #[cfg_attr(not(feature = "serialize"), allow(dead_code))]
+    ValueIsNotBlob(RawValue<'a>),
     UnknownValueType,
     Io(io::Error),
 }
-impl HMHError {
+impl<'a> HMHError<'a> {
     unsafe fn set_ctx<F: FnOnce() -> Result<(), Self>>(ctx: *mut sqlite3_context, f: F) {
         if let Err(e) = f() {
             let err_msg = e.to_string();
@@ -35,29 +35,25 @@ impl HMHError {
     }
 }
 
-impl fmt::Display for HMHError {
+impl<'a> fmt::Display for HMHError<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         match self {
             #[cfg(not(feature = "serialize"))]
             HMHError::FeatureMissing => write!(f, "This function is unavailable because sqlite3_hyperminhash was compiled without the `serialize`-feature."),
-            #[cfg(feature = "serialize")]
-            HMHError::ValueIsNotBlob => write!(f, "value is not of type BLOB"),
+            HMHError::ValueIsNotBlob(v) => write!(f, "value is not of type BLOB: {:?}", v),
             HMHError::Io(e) => write!(f, "IO-error in hyperminhash: {}", e),
             HMHError::UnknownValueType => write!(f, "Unkown value-type from sqlite")
         }
     }
 }
 
-// TODO This bullshit can go away
-impl error::Error for HMHError {}
-
-impl From<io::Error> for HMHError {
+impl<'a> From<io::Error> for HMHError<'a> {
     fn from(e: io::Error) -> Self {
         HMHError::Io(e)
     }
 }
 
-#[derive(Hash)]
+#[derive(Debug, Hash)]
 enum RawValue<'a> {
     Null,
     Int(i64),
@@ -67,7 +63,7 @@ enum RawValue<'a> {
 }
 
 impl<'a> RawValue<'a> {
-    unsafe fn new(value: *mut sqlite3_value) -> Result<Self, HMHError> {
+    unsafe fn new(value: *mut sqlite3_value) -> Result<Self, HMHError<'a>> {
         match sqlite3_value_type(value) as u32 {
             SQLITE_NULL => Ok(RawValue::Null),
             SQLITE_INTEGER => Ok(RawValue::Int(sqlite3_value_int64(value))),
@@ -99,10 +95,10 @@ impl<'a> RawValue<'a> {
     }
 
     #[cfg(feature = "serialize")]
-    fn as_blob(self) -> Result<&'a [u8], HMHError> {
+    fn as_blob(self) -> Result<&'a [u8], HMHError<'a>> {
         match self {
             RawValue::Blob(b) => Ok(b),
-            _ => Err(HMHError::ValueIsNotBlob),
+            other => Err(HMHError::ValueIsNotBlob(other)),
         }
     }
 }
