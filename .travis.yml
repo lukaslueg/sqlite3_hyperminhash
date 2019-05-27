@@ -3,8 +3,11 @@ language: rust
 cache: cargo
 
 os:
-- linux
-- osx
+  - linux
+  - osx
+
+env:
+  - RUST_BACKTRACE=1
 
 before_script:
   - rustup component add rustfmt
