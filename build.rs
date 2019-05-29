@@ -8,6 +8,7 @@ fn main() {
         .header("wrapper.h")
         .whitelist_function("sqlite3_aggregate_context")
         .whitelist_function("sqlite3_auto_extension")
+        .whitelist_function("sqlite3_errstr")
         .whitelist_function("sqlite3_result_blob")
         .whitelist_function("sqlite3_result_double")
         .whitelist_function("sqlite3_result_error")

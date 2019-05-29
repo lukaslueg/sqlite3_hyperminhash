@@ -107,6 +107,7 @@ impl<'a> RawValue<'a> {
 #[doc(hidden)]
 pub mod testutil {
     pub use super::bindings::sqlite3_auto_extension;
+    pub use super::bindings::sqlite3_errstr;
     pub use super::bindings::SQLITE_OK;
 }
 
