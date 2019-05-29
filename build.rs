@@ -1,5 +1,5 @@
 fn main() {
-    println!("cargo:rustc-link-lib=sqlite3");
+    pkg_config::probe_library("sqlite3").unwrap();
 
     let bindings = bindgen::Builder::default()
         .header("wrapper.h")
