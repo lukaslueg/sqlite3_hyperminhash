@@ -1,5 +1,8 @@
 fn main() {
-    pkg_config::probe_library("sqlite3").unwrap();
+    pkg_config::Config::new()
+        .atleast_version("3.8.7")
+        .probe("sqlite3")
+        .unwrap();
 
     let bindings = bindgen::Builder::default()
         .header("wrapper.h")
