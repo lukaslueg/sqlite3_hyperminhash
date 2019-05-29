@@ -27,7 +27,11 @@ int init_shim(
 ){
   SQLITE_EXTENSION_INIT2(pApi);
   int rc;
-  (void)pzErrMsg;
+
+  if (sqlite3_libversion_number() < 3008007) {
+      *pzErrMsg = sqlite3_mprintf("hyperminhash requires sqlite 3.8.7 or later");
+      return SQLITE_ERROR;
+  }
 
   rc = sqlite3_create_function_v2(
           db, // db
