@@ -8,8 +8,13 @@ os:
   - linux
   - osx
 
+addons:
+  homebrew:
+     packages:
+         - sqlite3
+
 env:
-  - RUST_BACKTRACE=1
+  - RUST_BACKTRACE=1 PKG_CONFIG_PATH="/usr/local/opt/sqlite/lib/pkgconfig"
 
 before_script:
   - rustup component add rustfmt
