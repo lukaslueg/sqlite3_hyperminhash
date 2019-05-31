@@ -24,7 +24,7 @@ if __name__ == "__main__":
     # A log of users; date and ipv6
     con.execute('CREATE TABLE users (date DATE NOT NULL, ip BLOB(16) NOT NULL)');
     con.executemany('''INSERT INTO users (date, ip) VALUES (?, ?)''',
-            ((random_date(), random_ipv6()) for i in range(100000)))
+            ((random_date(), random_ipv6()) for i in range(250000)))
 
     con.execute('CREATE TABLE stats (data_point VARCHAR(255) PRIMARY KEY, hmh_data BLOB)')
 
@@ -56,7 +56,7 @@ if __name__ == "__main__":
 
     # New days, more users...
     con.executemany('''INSERT INTO users (date, ip) VALUES (?, ?)''',
-            ((random_date(), random_ipv6()) for i in range(100000)))
+            ((random_date(), random_ipv6()) for i in range(250000)))
 
     update_count()
 
@@ -80,7 +80,7 @@ if __name__ == "__main__":
                         )
               ''')
     approx_t = time.perf_counter_ns() - t
-    print("Recurring users, approx: %i, in %.2fms" % (c.fetchone()[0], approx_t / 100000))
+    print("Recurring users, approx: %i, in %.2fms" % (c.fetchone()[0], approx_t / 1000000))
 
 
     # Same query using a subquery and DISTINCT
@@ -94,4 +94,4 @@ if __name__ == "__main__":
                                   WHERE u.date < '2017-01-01')
               ''')
     approx_t = time.perf_counter_ns() - t
-    print("Recurring users, exact: %i, in %.2fms" % (c.fetchone()[0], approx_t / 100000))
+    print("Recurring users, exact: %i, in %.2fms" % (c.fetchone()[0], approx_t / 1000000))
