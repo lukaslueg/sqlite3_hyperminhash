@@ -42,4 +42,8 @@ A [Hyperminhash](https://github.com/lukaslueg/hyperminhash)-extension for SQLite
 
   E.g. `SELECT HYPERMINHASH_INTERSECTION((SELECT stats.hmh_data FROM stats WHERE stats.data_point = 'users'), (SELECT stats.hmh_data FROM stats FROM stats WHERE stats.data_point = 'admins'));`
 
+## Building
+
+Use Rust's package manager via `cargo build --release`. A shared object file for the current platform will be placed in `target/release`.
+
 By default, only the `HYPERMINHASH()`-function is available. Compile the crate with the `serialize`-feature to enable the other functions, which return a static error if the `serialize`-feature was not activated.
