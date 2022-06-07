@@ -31,7 +31,7 @@ fn simple_count_error() -> rusqlite::Result<()> {
     con.execute("CREATE TABLE foo (id INT)", rusqlite::params![])?;
     let mut stmt = con.prepare("INSERT INTO foo (id) VALUES (?1)")?;
     for i in 0..1000 {
-        stmt.execute(&[i % 97])?;
+        stmt.execute([i % 97])?;
     }
     let r = hmh_id(&con)?;
     // Error should be small

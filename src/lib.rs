@@ -1,3 +1,4 @@
+#![allow(clippy::missing_safety_doc)]
 mod bindings {
     #![allow(non_upper_case_globals)]
     #![allow(non_camel_case_types)]
@@ -69,7 +70,7 @@ impl<'a> RawValue<'a> {
             SQLITE_INTEGER => Ok(RawValue::Int(sqlite3_value_int64(value))),
             SQLITE_FLOAT => Ok(RawValue::Float({
                 // Hold my beer and watch this!
-                std::mem::transmute(sqlite3_value_double(value))
+                sqlite3_value_double(value).to_bits()
             })),
             SQLITE_TEXT => {
                 let s = sqlite3_value_text(value);
@@ -111,7 +112,7 @@ pub mod testutil {
     pub use super::bindings::SQLITE_OK;
 }
 
-/// Initialization shim provided by shim.c
+// Initialization shim provided by shim.c
 extern "C" {
     pub fn init_shim(
         db: *mut ffi::c_void,

@@ -132,7 +132,7 @@ pub mod serialize {
         con.execute("CREATE TABLE foo (id INT)", rusqlite::params![])?;
         let mut stmt = con.prepare("INSERT INTO foo (id) VALUES (?1)")?;
         for i in 0..200 {
-            stmt.execute(&[i])?;
+            stmt.execute([i])?;
         }
         con.execute(
             r#"UPDATE counts
@@ -180,7 +180,7 @@ pub mod serialize {
         con.execute("CREATE TABLE foo (id INT)", rusqlite::params![])?;
         let mut stmt = con.prepare("INSERT INTO foo (id) VALUES (?1)")?;
         for i in 0..100 {
-            stmt.execute(&[i])?;
+            stmt.execute([i])?;
         }
         con.execute(
             "CREATE TABLE stats (id INT PRIMARY KEY, data BLOB)",
@@ -222,7 +222,7 @@ pub mod serialize {
         con.execute("CREATE TABLE foo (id INT)", rusqlite::params![])?;
         let mut stmt = con.prepare("INSERT INTO foo (id) VALUES (?1)")?;
         for i in 0..1000 {
-            stmt.execute(&[i])?;
+            stmt.execute([i])?;
         }
         let r: f64 = con.query_row(
             "SELECT HYPERMINHASH_INTERSECTION(

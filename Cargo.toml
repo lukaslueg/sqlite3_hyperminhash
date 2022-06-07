@@ -9,12 +9,12 @@ build = "build.rs"
 hyperminhash = "0.1"
 
 [dev-dependencies]
-rusqlite = "0.18"
-rand = "0.6"
+rusqlite = "0.27"
+rand = "0.8"
 
 [build-dependencies]
 cc = "1"
-bindgen = { version = "0.49", default_features = false }
+bindgen = { version = "0.60", default_features = false, features = ["runtime"] }
 pkg-config = "0.3"
 
 [lib]
